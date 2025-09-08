@@ -69,8 +69,8 @@ export function CAOverview() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Issuers ID</TableHead>
-                  <TableHead>Issuer Name</TableHead>
+                  <TableHead>IntermediateCA ID</TableHead>
+                  <TableHead>IntermediateCA Name</TableHead>
                   <TableHead>Algorithm</TableHead>
                   <TableHead>Root ID</TableHead>
                   <TableHead>Valid From</TableHead>
@@ -102,8 +102,8 @@ export function CAOverview() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Root ID</TableHead>
-                  <TableHead>Root Name</TableHead>
+                  <TableHead>RootCA ID</TableHead>
+                  <TableHead>RootCA Name</TableHead>
                   <TableHead>Algorithm</TableHead>
                   <TableHead>Valid From</TableHead>
                   <TableHead>Valid To</TableHead>
