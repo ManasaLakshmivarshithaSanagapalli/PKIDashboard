@@ -19,13 +19,15 @@ import {
   AlertTriangle,
   Plus,
   Globe,
-  Clock
+  Clock,
+  KeyRound
 } from "lucide-react"
-
+ 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home, current: true },
   { name: "Certificate Authorities", href: "/ca", icon: Shield },
   { name: "Certificates", href: "/certificates", icon: Certificate },
+  { name: "Generate Key Pair", href: "/generate-key", icon: KeyRound },
   { name: "Issue Certificate", href: "/issue", icon: Plus },
   { name: "Certificate Requests", href: "/requests", icon: FileX },
   { name: "API Requests", href: "/api-requests", icon: Globe }, // Added API Requests navigation item
