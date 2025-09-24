@@ -5,13 +5,13 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
-interface CertificateDetailPageProps {
-  params: {
-    id: string
-  }
-}
+export default async function CertificateDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
 
-export default function CertificateDetailPage({ params }: CertificateDetailPageProps) {
   return (
     <div className="flex min-h-screen bg-slate-50">
       <DashboardSidebar />
@@ -20,7 +20,6 @@ export default function CertificateDetailPage({ params }: CertificateDetailPageP
         <DashboardHeader />
 
         <main className="flex-1 p-6 space-y-6">
-          {/* Page Header */}
           <div className="flex items-center space-x-4">
             <Link href="/certificates">
               <Button variant="ghost" size="sm">
@@ -29,13 +28,15 @@ export default function CertificateDetailPage({ params }: CertificateDetailPageP
               </Button>
             </Link>
             <div className="space-y-2">
-              <h1 className="text-3xl font-black font-heading text-cyan-800">Certificate Details</h1>
-              <p className="text-slate-600 font-body">View and manage certificate information</p>
+              <h1 className="text-3xl font-black font-heading text-cyan-800">
+                Certificate Details
+              </h1>
+              <p className="text-slate-600 font-body">
+                View and manage certificate information
+              </p>
             </div>
           </div>
-
-          {/* Certificate Details */}
-          <CertificateDetails certificateId={params.id} />
+          <CertificateDetails certificateId={id} />
         </main>
       </div>
     </div>
