@@ -1,106 +1,115 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
-import { verifyApiKey } from "@/lib/api/auth"
+import mysql from "mysql2/promise"
+import { NextResponse } from "next/server"
+import forge from "node-forge"
 
-export async function GET(request: NextRequest) {
+export async function GET(req: Request) {
   try {
-    const authResult = await verifyApiKey(request)
-    if (!authResult.success) {
-      return NextResponse.json({ error: authResult.error }, { status: 401 })
-    }
-
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get("status")
-    const ca_id = searchParams.get("ca_id")
-    const limit = Number.parseInt(searchParams.get("limit") || "50")
-    const offset = Number.parseInt(searchParams.get("offset") || "0")
-
-    const supabase = createClient()
-    let query = supabase
-      .from("certificates")
-      .select(`
-        id,
-        serial_number,
-        subject_dn,
-        issuer_dn,
-        status,
-        issued_at,
-        expires_at,
-        certificate_authorities(name)
-      `)
-      .range(offset, offset + limit - 1)
-
-    if (status) query = query.eq("status", status)
-    if (ca_id) query = query.eq("ca_id", ca_id)
-
-    const { data: certificates, error } = await query
-
-    if (error) {
-      return NextResponse.json({ error: "Failed to fetch certificates" }, { status: 500 })
-    }
-
-    return NextResponse.json({
-      certificates,
-      pagination: {
-        limit,
-        offset,
-        total: certificates?.length || 0,
-      },
+    const db = await mysql.createConnection({
+      host: "localhost",
+      user: "root",
+      password: "Dhanasri@30",
+      database: "ocsp_database",
     })
-  } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+
+    const url = new URL(req.url)
+    const statusFilter = url.searchParams.get("status")
+    const issuerFilter = url.searchParams.get("issuer_id")
+    const limit = parseInt(url.searchParams.get("limit") || "50")
+    const offset = parseInt(url.searchParams.get("offset") || "0")
+
+    let query = `
+      SELECT 
+        e.cert_id,
+        e.issuer_id,
+        e.serial_number,
+        e.subject_name,
+        i.issuer_name,
+        e.certificate_pem,
+        e.key_type,
+        e.status,
+        e.created_at,
+        e.updated_at,
+        e.revocation_date,
+        e.revocation_reason
+      FROM end_user_certificates e
+      JOIN issuers i ON e.issuer_id = i.issuer_id
+      WHERE 1=1
+    `
+    const params: any[] = []
+
+    if (statusFilter) {
+      query += " AND e.status = ?"
+      params.push(statusFilter)
+    }
+
+    if (issuerFilter) {
+      query += " AND e.issuer_id = ?"
+      params.push(issuerFilter)
+    }
+
+    query += ` ORDER BY e.created_at DESC LIMIT ${limit} OFFSET ${offset}`
+
+    const [rows] = await db.execute(query, params)
+    await db.end()
+
+    // Parse PEMs and extract CN robustly
+    const parsedCertificates = (rows as any[]).map((row) => {
+      let subjectCN: string | null = null
+      let issuerCN: string | null = null
+
+      // 1️⃣ Try parsing PEM
+      try {
+        if (row.certificate_pem) {
+          const cert = forge.pki.certificateFromPem(row.certificate_pem)
+          subjectCN = cert.subject.getField("CN")?.value || null
+          issuerCN = cert.issuer.getField("CN")?.value || null
+        }
+      } catch {
+        
+      }
+
+      // 2️⃣ Fallback to DB subject_name
+       if (!subjectCN && row.subject_name) {
+  const cnMatch = row.subject_name.match(/CN=([^,\/\s]+)/);
+  if (cnMatch) {
+    subjectCN = cnMatch[1].trim();
+  } else {
+    const fallback = row.subject_name.match(/^(.*?)\s*(?=O=|C=|,|$)/);
+    if (fallback) subjectCN = fallback[1].trim();
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const authResult = await verifyApiKey(request)
-    if (!authResult.success || !authResult.permissions?.includes("certificate:create")) {
-      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
-    }
 
-    const body = await request.json()
-    const { csr, ca_id, subject_dn, validity_days = 365 } = body
+      // 3️⃣ Fallback to DB issuer_name
+      if (!issuerCN && row.issuer_name) {
+        const cnMatch = row.issuer_name.match(/CN=([^,\/]+)/)
+        if (cnMatch) {
+          issuerCN = cnMatch[1].trim()
+        } else {
+          const fallback = row.issuer_name.match(/^(.*?)\s*(O=|C=|$)/)
+          if (fallback) issuerCN = fallback[1].trim()
+        }
+      }
 
-    if (!csr || !ca_id || !subject_dn) {
-      return NextResponse.json(
-        {
-          error: "Missing required fields: csr, ca_id, subject_dn",
+      return {
+        ...row,
+        parsed: {
+          subjectCN,
+          issuerCN,
+          serialNumber: row.serial_number,
+          validFrom: row.created_at,
+          validTo: row.updated_at,
+          publicKeyAlgorithm: row.key_type,
         },
-        { status: 400 },
-      )
-    }
+      }
+    })
 
-    const supabase = createClient()
-
-    // Create certificate request
-    const { data: certRequest, error: requestError } = await supabase
-      .from("certificate_requests")
-      .insert({
-        ca_id,
-        subject_dn,
-        csr,
-        status: "pending",
-        requested_by: authResult.client_id,
-        validity_days,
-        request_type: "api",
-      })
-      .select()
-      .single()
-
-    if (requestError) {
-      return NextResponse.json({ error: "Failed to create certificate request" }, { status: 500 })
-    }
-
-    return NextResponse.json(
-      {
-        request_id: certRequest.id,
-        status: "pending",
-        message: "Certificate request submitted successfully",
-      },
-      { status: 201 },
-    )
-  } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({
+      certificates: parsedCertificates,
+      pagination: { limit, offset, count: parsedCertificates.length },
+    })
+  } catch (err: any) {
+    console.error("API /certificates error:", err)
+    return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
