@@ -20,7 +20,7 @@ export async function GET() {
 
     return NextResponse.json({
       roots: rows,
-      Count: (rows as any[]).length, // 
+      Count: (rows as any[]).length, 
     })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
