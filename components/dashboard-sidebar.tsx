@@ -20,28 +20,33 @@ import {
   Plus,
   Globe,
   Clock,
-  KeyRound
+  KeyRound,
+  X
 } from "lucide-react"
+
+import { usePathname } from "next/navigation"
  
 const navigation = [
-  { name: "Dashboard", href: "/", icon: Home, current: true },
+  { name: "Dashboard", href: "/", icon: Home },
   { name: "Certificate Authorities", href: "/ca", icon: Shield },
   { name: "Certificates", href: "/certificates", icon: Certificate },
   { name: "Generate Key Pair", href: "/generate-key", icon: KeyRound },
-  { name: "Issue Certificate", href: "/issue", icon: Plus },
-  { name: "Certificate Requests", href: "/requests", icon: FileX },
-  { name: "API Requests", href: "/api-requests", icon: Globe }, // Added API Requests navigation item
-  { name: "CRL Management", href: "/crl", icon: AlertTriangle },
+  // { name: "Issue Certificate", href: "/issue", icon: Plus },
+  // { name: "Certificate Requests", href: "/requests", icon: FileX },
+  // { name: "API Requests", href: "/api-requests", icon: Globe }, 
+  // { name: "CRL Management", href: "/crl", icon: AlertTriangle },
   { name: "OCSP Status", href: "/ocsp", icon: Server },
-  { name: "HSM Integration", href: "/hsm", icon: Key },
-  { name: "Registration Authority", href: "/ra", icon: Users },
-  { name: "Audit Logs", href: "/audit", icon: Activity },
-  { name: "Settings", href: "/settings", icon: Settings },
-  {name:"TimeStamping Authority",href:"/tsa",icon:Clock}
+  // { name: "HSM Integration", href: "/hsm", icon: Key },
+  // { name: "Registration Authority", href: "/ra", icon: Users },
+  // { name: "Audit Logs", href: "/audit", icon: Activity },
+  // { name: "Settings", href: "/settings", icon: Settings },
+  {name:"Revocation",href:"/revoke",icon:FileX},
+  {name:"TimeStamping Authority",href:"/tsa",icon:Clock},
 ]
 
 export function DashboardSidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const pathname = usePathname()
 
   return (
     <div
@@ -73,6 +78,8 @@ export function DashboardSidebar() {
         <nav className="flex-1 p-4 space-y-2">
           {navigation.map((item) => {
             const Icon = item.icon
+            const isCurrent = pathname === item.href
+
             return (
               <Link
                 key={item.name}
@@ -80,7 +87,7 @@ export function DashboardSidebar() {
                 className={cn(
                   "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium font-body transition-all duration-200",
                   "hover:bg-cyan-50 hover:text-cyan-700 hover:scale-105",
-                  item.current ? "bg-cyan-100 text-cyan-700 shadow-sm" : "text-slate-600",
+                  isCurrent ? "bg-cyan-100 text-cyan-700 shadow-sm" : "text-slate-600",
                 )}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
