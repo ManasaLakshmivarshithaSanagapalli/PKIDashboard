@@ -20,7 +20,7 @@ export async function GET() {
 
     return NextResponse.json({
       issuers: rows,
-      totalCount: (rows as any[]).length, // 👈 count of issuers
+      totalCount: (rows as any[]).length, 
     })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
