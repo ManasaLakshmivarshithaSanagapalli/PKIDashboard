@@ -32,8 +32,7 @@ export function CAOverview() {
   const stats = [
     { title: "Total CAs", value: Count+totalCount, change: "All operational", icon: Shield, color: "text-cyan-600" },
     { title: "Root CAs", value: Count, change: "All operational", icon: CheckCircle, color: "text-blue-600" },
-    { title: "Intermediate CAs", value: totalCount, change: "All operational", icon: CheckCircle, color: "text-blue-600" },
-    // { title: "Expiring Soon", value: "1", change: "Within 90 days", icon: AlertTriangle, color: "text-amber-600" },
+    { title: "Intermediate CAs", value: totalCount, change: "All operational", icon: CheckCircle, color: "text-blue-600" }
   ]
 
   return (
